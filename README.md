@@ -5,6 +5,8 @@ Experimental docker images for running the
 [Confluent Platform](http://confluent.io/docs/current/index.html).
 These images are currently intended for development use, not for production use.
 
+[![](https://badge.imagelayers.io/socialorra/confluent-platform:latest.svg)](https://imagelayers.io/?images=socialorra/confluent-platform:latest 'Get your own badge on imagelayers.io')
+
 Building Images
 ---------------
 
