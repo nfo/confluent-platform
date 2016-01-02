@@ -1,6 +1,6 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-pushd /confluent-2.0.0
+cd /confluent-2.0.0
 
 ./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties &
 sleep 5
@@ -9,6 +9,4 @@ sleep 5
 ./bin/schema-registry-start ./etc/schema-registry/schema-registry.properties &
 
 wait
-
-popd
 
