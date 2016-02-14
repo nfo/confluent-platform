@@ -6,6 +6,14 @@ This image is currently intended for development use, not for production use.
 
 [![](https://badge.imagelayers.io/socialorra/confluent-platform:latest.svg)](https://imagelayers.io/?images=socialorra/confluent-platform:latest 'Get your own badge on imagelayers.io')
 
+Volumes
+-------
+
+The following volumes are available:
+- /kafka-logs: Kafka broker data
+- /zookeeper: Zookeeper server data
+- /logs: log files
+
 Building Image
 ---------------
 
