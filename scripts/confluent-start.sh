@@ -2,7 +2,7 @@
 
 mkdir /logs &> /dev/null
 
-cd /confluent-2.0.0
+cd /confluent-1.0.1
 
 _IP=$(cat /etc/hosts | head -n1 | awk '{print $1}')
 
@@ -29,6 +29,9 @@ cat $kafka_cfg_tpl | sed \
 	-e "s|log.dirs=/tmp/kafka-logs|log.dirs=${KAFKA_DATA_DIR:-$_KAFKA_DATA_DIR}|g" \
 	> $kafka_cfg
 
+# set kafka logging level to info so we can monitor startup
+sed -i 's/WARN/INFO/g' etc/kafka/tools-log4j.properties
+
 cat $zk_cfg_tpl | sed \
 	-e "s|dataDir=/tmp/zookeeper|dataDir=${ZK_DATA_DIR:-$_ZK_DATA_DIR}|g" \
 	> $zk_cfg
@@ -40,7 +43,7 @@ sleep 5
 sleep 1
 
 echo "Waiting for Kafka to start..."
-timeout 15 grep -q 'Starting metrics collection from monitored broker' <(tail -F /logs/kafka.log)
+timeout 15 grep -q 'New broker startup callback for' <(tail -F /logs/kafka.log)
 
 if [ "$?" -eq 124 ]; then
 	echo "error: could not start Kafka server, check logs." >&2
