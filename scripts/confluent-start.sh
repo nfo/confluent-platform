@@ -4,7 +4,7 @@ mkdir /logs &> /dev/null
 
 cd /confluent-2.0.0
 
-_IP=$(cat /etc/hosts | head -n1 | awk '{print $1}')
+_IP=$(hostname -i | awk '{print $1}')
 
 _KAFKA_DATA_DIR=/kafka-logs
 
