@@ -31,6 +31,13 @@ if [ ! -f "$sch_reg_cfg_tpl" ]; then
 	cp $sch_reg_cfg $sch_reg_cfg_tpl
 fi
 
+rp_cfg=./etc/kafka-rest/kafka-rest.properties
+rp_cfg_tpl=./etc/kafka-rest/kafka-rest.properties.tpl
+
+if [ ! -f "$rp_cfg_tpl" ]; then
+	cp $rp_cfg $rp_reg_cfg_tpl
+fi
+
 cat $kafka_cfg_tpl | sed \
 	-e "s|zookeeper.connect=localhost:2181|zookeeper.connect=${KAFKA_ADVERTISED_HOST_NAME:-$_IP}:2181|g" \
 	-e "s|#listeners=PLAINTEXT://:9092|listeners=PLAINTEXT://0.0.0.0:9092|g" \
@@ -47,6 +54,12 @@ cat $sch_reg_cfg_tpl | sed \
 	-e "s|kafkastore.connection.url=localhost:2181|kafkastore.connection.url=${KAFKA_ADVERTISED_HOST_NAME:-$_IP}:2181|g" \
 	> $sch_reg_cfg
 
+cat $rp_cfg_tpl | sed \
+	-e "s|#id=kafka-rest-test-server|id=kafka-rest-proxy|g" \
+	-e "s|#schema.registry.url=http://localhost:8081|schema.registry.url=http://${KAFKA_ADVERTISED_HOST_NAME:-$_IP}:8081|g" \
+	-e "s|#zookeeper.connect=localhost:2181|zookeeper.connect=http://${KAFKA_ADVERTISED_HOST_NAME:-$_IP}:2181|g" \
+	> $rp_cfg
+
 ./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties | tee /logs/zookeeper.log &
 sleep 5
 
@@ -62,5 +75,8 @@ if [ "$?" -eq 124 ]; then
 fi
 
 ./bin/schema-registry-start ./etc/schema-registry/schema-registry.properties | tee /logs/schema-registry.log &
+sleep 1
+
+./bin/kafka-rest-start ./etc/kafka-rest/kafka-rest.properties | tee /logs/kafka-rest.log &
 
 wait
