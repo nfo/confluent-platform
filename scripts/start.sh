@@ -5,12 +5,6 @@ mkdir -p /logs
 
 cd /confluent-3.0.0
 
-_IP=$(hostname -i | awk '{print $1}')
-
-_KAFKA_DATA_DIR=/kafka-logs
-
-_ZK_DATA_DIR=/zookeeper
-
 waitForZookeeper() {
   i="0"
   until [ "$(echo ruok | nc localhost 2181)" = "imok" ]
@@ -52,41 +46,23 @@ waitForPort() {
   done
 }
 
+# configure kafka
 kafka_cfg=./etc/kafka/server.properties
-kafka_cfg_tpl=./etc/kafka/server.properties.tpl
-
-if [ ! -f "$kafka_cfg_tpl" ]; then
-	cp $kafka_cfg $kafka_cfg_tpl
+if [ -n "$KAFKA_ADVERTISED_LISTENERS" ]; then
+  sed -e "s|#listeners=PLAINTEXT://:9092|listeners=PLAINTEXT://0.0.0.0:9092|g" -i $kafka_cfg
+  sed -e "s|#advertised.listeners=PLAINTEXT://your.host.name:9092|advertised.listeners=$KAFKA_ADVERTISED_LISTENERS|g" -i $kafka_cfg
 fi
+sed -e "s|log.dirs=/tmp/kafka-logs|log.dirs=/kafka-logs|g" -i $kafka_cfg
 
+# configure zookeeper
 zk_cfg=./etc/kafka/zookeeper.properties
-zk_cfg_tpl=./etc/kafka/zookeeper.properties.tpl
+sed -e "s|dataDir=/tmp/zookeeper|dataDir=/zookeeper|g" -i $zk_cfg
 
-if [ ! -f "$zk_cfg_tpl" ]; then
-	cp $zk_cfg $zk_cfg_tpl
-fi
-
+# configure rest proxy
 rp_cfg=./etc/kafka-rest/kafka-rest.properties
-rp_cfg_tpl=./etc/kafka-rest/kafka-rest.properties.tpl
-
-if [ ! -f "$rp_cfg_tpl" ]; then
-	cp $rp_cfg $rp_cfg_tpl
-fi
-
-cat $kafka_cfg_tpl | sed \
-	-e "s|#listeners=PLAINTEXT://:9092|#listeners=PLAINTEXT://0.0.0.0:9092|g" \
-	-e "s|log.dirs=/tmp/kafka-logs|log.dirs=${KAFKA_DATA_DIR:-$_KAFKA_DATA_DIR}|g" \
-	> $kafka_cfg
-
-cat $zk_cfg_tpl | sed \
-	-e "s|dataDir=/tmp/zookeeper|dataDir=${ZK_DATA_DIR:-$_ZK_DATA_DIR}|g" \
-	> $zk_cfg
-
-cat $rp_cfg_tpl | sed \
-	-e "s|#id=kafka-rest-test-server|id=kafka-rest-proxy|g" \
-	-e "s|#schema.registry.url=http://localhost:8081|schema.registry.url=http://localhost:8081|g" \
-	-e "s|#zookeeper.connect=localhost:2181|zookeeper.connect=localhost:2181|g" \
-	> $rp_cfg
+sed -e "s|#id=kafka-rest-test-server|id=kafka-rest-proxy|g" -i $rp_cfg
+sed -e "s|#schema.registry.url=http://localhost:8081|schema.registry.url=http://localhost:8081|g" -i $rp_cfg
+sed -e "s|#zookeeper.connect=localhost:2181|zookeeper.connect=localhost:2181|g" -i $rp_cfg
 
 ./bin/zookeeper-server-start ./etc/kafka/zookeeper.properties | tee /logs/zookeeper.log &
 waitForZookeeper
